@@ -1,0 +1,155 @@
+{% load staticfiles %}
+<html>
+<head>
+    <title>Decentralized News Platform</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+
+<style>
+    body {
+    padding-top: 65px;
+    }
+</style>
+
+</head>
+
+<body>
+
+    <div class="container-fluid">
+
+        <!-- Navigation -->
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">Decentralized News Platform</a>
+            </div>
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li>
+                        <a href="#">News Feeds</a>
+                    </li>
+                </ul>
+				<ul class="nav navbar-nav navbar-right">
+                    <li><a href="signup-user/">Logout {{ request.user.username }}</a></li>
+				</ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+
+        <div class="col-md-2"></div>
+        <div class="col-md-8">
+            <div class="title-div">
+                <div class="jumbotron">
+                    <center>
+                        <h2>
+                            News Feeds
+                        </h2>
+                    </center>
+                </div>
+            </div>
+            <div id="outerDiv" class="feeds">
+            </div>
+        </div>
+
+        <div class="col-md-2"></div>
+    </div>
+
+<script>
+
+    var printf = function () {
+        var num = arguments.length;
+        var oStr = arguments[0];
+        for (var i = 1; i < num; i++) {
+            var pattern = "\\{" + (i - 1) + "\\}";
+            var re = new RegExp(pattern, "g");
+            oStr = oStr.replace(re, arguments[i]);
+        }
+        return oStr;
+        };
+
+    var htmlDiv = `
+                        <div id ="{0}" class="well well-lg">
+                    <h3>
+                    <a href="{1}">{2}</a>
+                    </h3>
+                    <div class="row">
+                        <div class="col-md-2">
+                            <button class="upvote btn btn-primary" type="button">
+                                Upvotes <span class="badge">{3}</span>
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="downvote btn btn-primary" type="button">
+                                Downvotes <span class="badge">{4}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                `;
+
+    $(document).ready(function(){
+        $.get("http://127.0.0.1:8000/get_data", function (data) {
+
+            function getNewsArticles() {
+
+                var jsonObj = undefined;
+
+                for (var i = 0; i < data.length; i++) {
+                    //jsonObj = JSON.parse(data[i].value);
+                    jsonObj = JSON.parse(JSON.parse(data[i]).value);
+                    $("#outerDiv").append(printf(htmlDiv, jsonObj.key_reference, jsonObj.news_url, jsonObj.news_title, jsonObj.upvotes, jsonObj.downvotes))
+                }
+
+            }
+
+            function postVote(id, action){
+                var postData = {
+                    unique_id : id,
+                    status : action
+                };
+
+                $.ajax({
+                    type: "POST",
+                    url: "http://127.0.0.1:8000/do_vote_endpoint/",
+                    data: postData,
+                    success: function(data){
+                        console.log(data);
+                        $("#outerDiv").empty();
+                        getNewsArticles();
+                    }
+});
+
+            }
+
+            getNewsArticles();
+
+            $(".upvote").on('click', function(e){
+                postVote($(e.target.parentNode.parentNode.parentNode).prop("id"), "upvote");
+                console.log($(e.target.parentNode.parentNode.parentNode).prop("id"));
+            });
+
+            $(".downvote").on('click', function(e){
+                postVote($(e.target.parentNode.parentNode.parentNode).prop("id"), "downvote");
+                console.log($(e.target.parentNode.parentNode.parentNode).prop("id"));
+            });
+
+        });
+
+    });
+</script>
+
+</body>
+</html>
